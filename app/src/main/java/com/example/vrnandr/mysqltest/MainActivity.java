@@ -4,12 +4,12 @@ import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.sql.Connection;
@@ -19,11 +19,14 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ProgressDialog pDialog;
-    private TextView tv;
+    private static  ProgressDialog pDialog;
+    private static TextView tv;
+    private static ListView lv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         tv = findViewById(R.id.tv);
+        lv = findViewById(R.id.list_view);
+
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -73,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    class MyTask extends AsyncTask<String,Void, Integer>{
+    static class MyTask extends AsyncTask<String,Void, Integer>{
 
         private static final String url = "jdbc:mysql://asbest.dyndns.biz:3306/db_test";
         private static final String user = "user_varaa";
@@ -82,12 +87,14 @@ public class MainActivity extends AppCompatActivity {
         private Statement statement;
         private ResultSet resultSet;
 
+        private ArrayList<DBItem> list;
         private Integer cnt=-1;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            pDialog = new ProgressDialog(MainActivity.this);
+            list = new ArrayList<>();
+            pDialog = new ProgressDialog(App.getContext());
             pDialog.setMessage("Загрузка продуктов. Подождите...");
             pDialog.setIndeterminate(false);
             pDialog.setCancelable(false);
@@ -104,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 resultSet = statement.executeQuery(strings[0]);
 
                 while (resultSet.next()){
-                    cnt=resultSet.getInt(1);
+                    list.add(new DBItem(resultSet.getString(1),resultSet.getString(2),resultSet.getInt(3)));
                 }
 
 
@@ -137,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer integer) {
             pDialog.dismiss();
-            tv.setText(cnt.toString());
+            lv.setAdapter(new MyListViewAdapter(App.getContext(),list));
+            //tv.setText(cnt.toString());
         }
     }
 
