@@ -9,6 +9,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -22,11 +23,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnListViewButtonClickListener{
 
-    private static  ProgressDialog pDialog;
-    private static TextView tv;
-    private static ListView lv;
+    private static ProgressDialog pDialog;
+    private ListView lv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        tv = findViewById(R.id.tv);
         lv = findViewById(R.id.list_view);
 
 
@@ -43,6 +42,11 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                pDialog = new ProgressDialog(MainActivity.this);
+                pDialog.setMessage("Загрузка продуктов. Подождите...");
+                pDialog.setIndeterminate(false);
+                pDialog.setCancelable(false);
+                pDialog.show();
                 new MyTask().execute("SELECT * FROM tbl_test");
             }
         });
@@ -77,8 +81,20 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onClick(String id, String whatToDo) {
+        pDialog = new ProgressDialog(MainActivity.this);
+        pDialog.setMessage("Выполнение операции. Подождите...");
+        pDialog.setIndeterminate(false);
+        pDialog.setCancelable(false);
+        pDialog.show();
+        new MyUpdateTask().execute("UPDATE tbl_test SET prod_kol = prod_kol "+whatToDo+" 1 WHERE prod_id = "+id);
 
-    static class MyTask extends AsyncTask<String,Void, Integer>{
+
+    }
+
+
+    class MyTask extends AsyncTask<String,Void, Integer>{
 
         private static final String url = "jdbc:mysql://asbest.dyndns.biz:3306/db_test";
         private static final String user = "user_varaa";
@@ -94,11 +110,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             list = new ArrayList<>();
-            pDialog = new ProgressDialog(App.getContext());
-            pDialog.setMessage("Загрузка продуктов. Подождите...");
-            pDialog.setIndeterminate(false);
-            pDialog.setCancelable(false);
-            pDialog.show();
+
         }
 
 
@@ -144,7 +156,72 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer integer) {
             pDialog.dismiss();
-            lv.setAdapter(new MyListViewAdapter(App.getContext(),list));
+            lv.setAdapter(new MyListViewAdapter(App.getContext(),list,MainActivity.this));
+            //tv.setText(cnt.toString());
+        }
+    }
+
+
+    class MyUpdateTask extends AsyncTask<String,Void, Integer>{
+
+        private static final String url = "jdbc:mysql://asbest.dyndns.biz:3306/db_test";
+        private static final String user = "user_varaa";
+        private static final String password = "user_varaa";
+        private Connection connection;
+        private Statement statement;
+        private ResultSet resultSet;
+
+        private ArrayList<DBItem> list;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            list = new ArrayList<>();
+
+        }
+
+
+        @Override
+        protected Integer doInBackground(String... strings) {
+
+            try {
+                connection = DriverManager.getConnection(url,user, password);
+                statement = connection.createStatement();
+                statement.executeUpdate(strings[0]);
+
+                resultSet = statement.executeQuery("SELECT * FROM tbl_test");
+
+                while (resultSet.next()){
+                    list.add(new DBItem(resultSet.getString(1),resultSet.getString(2),resultSet.getInt(3)));
+                }
+
+            } catch ( SQLException e){
+                e.printStackTrace();
+            } finally {
+                try{
+                    connection.close();
+                } catch (SQLException e){
+                    e.printStackTrace();
+                }
+                try{
+                    statement.close();
+                } catch (SQLException e){
+                    e.printStackTrace();
+                }
+                try{
+                    resultSet.close();
+                } catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            pDialog.dismiss();
+            lv.setAdapter(new MyListViewAdapter(App.getContext(),list,MainActivity.this));
             //tv.setText(cnt.toString());
         }
     }

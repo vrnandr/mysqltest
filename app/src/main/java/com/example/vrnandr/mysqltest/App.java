@@ -4,14 +4,15 @@ import android.app.Application;
 import android.content.Context;
 
 public class App extends Application {
-    private static Context context;
+    private static Context mcontext;
 
+    @Override
     public void onCreate() {
         super.onCreate();
-        App.context = getApplicationContext();
+        mcontext = getApplicationContext();
     }
 
     public static Context getContext() {
-        return App.context;
+        return mcontext;
     }
 }
