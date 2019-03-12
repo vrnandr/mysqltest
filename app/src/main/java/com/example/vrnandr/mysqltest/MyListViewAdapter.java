@@ -15,7 +15,6 @@ import java.util.List;
 
 public class MyListViewAdapter extends BaseAdapter {
 
-    private ResultSet resultSet;
     private ArrayList<DBItem> items;
     private LayoutInflater layoutInflater;
     private OnListViewButtonClickListener listener;
@@ -74,5 +73,10 @@ public class MyListViewAdapter extends BaseAdapter {
         count.setText(item.prod_kol.toString());
 
         return view;
+    }
+
+    public void updateData(ArrayList<DBItem> items){
+        this.items=items;
+        notifyDataSetChanged();
     }
 }

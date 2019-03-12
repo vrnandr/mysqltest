@@ -1,8 +1,12 @@
 package com.example.vrnandr.mysqltest;
 
 import android.app.ProgressDialog;
+
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -36,18 +40,24 @@ public class MainActivity extends AppCompatActivity implements OnListViewButtonC
         setSupportActionBar(toolbar);
 
         lv = findViewById(R.id.list_view);
+        final MyListViewAdapter adapter = new MyListViewAdapter(this, null, this);
+
+        MyViewModel viewModel = ViewModelProviders.of(this).get(MyViewModel.class);
+
+        viewModel.getAllData().observe(this, new Observer<ArrayList<DBItem>>() {
+            @Override
+            public void onChanged(@Nullable ArrayList<DBItem> dbItems) {
+                adapter.updateData(dbItems);
+            }
+        });
+
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                pDialog = new ProgressDialog(MainActivity.this);
-                pDialog.setMessage("Загрузка продуктов. Подождите...");
-                pDialog.setIndeterminate(false);
-                pDialog.setCancelable(false);
-                pDialog.show();
-                new MyTask().execute("SELECT * FROM tbl_test");
+
             }
         });
 
@@ -93,6 +103,19 @@ public class MainActivity extends AppCompatActivity implements OnListViewButtonC
 
     }
 
+
+    public void viewProgressDialog(String string){
+        pDialog = new ProgressDialog(MainActivity.this);
+        //pDialog.setMessage("Выполнение операции. Подождите...");
+        pDialog.setMessage(string);
+        pDialog.setIndeterminate(false);
+        pDialog.setCancelable(false);
+        pDialog.show();
+    }
+
+    public void dismissProgressDialog(){
+        if (pDialog.isShowing()) pDialog.dismiss();
+    }
 
     class MyTask extends AsyncTask<String,Void, Integer>{
 
